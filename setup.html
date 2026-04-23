@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Small Circles — Get This App</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#F6F1E9;font-family:'Inter',sans-serif;color:#241E18;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#C5B59A;border-radius:2px;}
+body{padding-bottom:60px;}
+.wrap{max-width:640px;margin:0 auto;padding:0 20px;}
+
+/* Hero */
+.hero{background:#16293D;padding:48px 20px 40px;text-align:center;margin-bottom:40px;}
+.hero-inner{max-width:640px;margin:0 auto;}
+.hero-eyebrow{font-family:'Inter',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#C9A870;opacity:0.7;margin-bottom:18px;}
+.hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:38px;letter-spacing:0.18em;text-transform:uppercase;color:#F6F1E9;margin-bottom:8px;}
+.hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:rgba(246,241,233,0.6);margin-bottom:28px;line-height:1.6;}
+.hero-cta{display:inline-block;background:#A87C38;color:#F6F1E9;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:13px 28px;border-radius:6px;text-decoration:none;transition:background 0.2s;}
+.hero-cta:hover{background:#C9A870;color:#16293D;}
+.hero-note{font-family:'Inter',sans-serif;font-size:10px;color:rgba(201,168,112,0.45);margin-top:12px;letter-spacing:0.06em;}
+
+/* Sections */
+.section{margin-bottom:36px;}
+.section-eyebrow{font-family:'Inter',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:#9E9288;margin-bottom:16px;}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:#16293D;margin-bottom:14px;line-height:1.3;}
+
+/* Philosophy */
+.philosophy{background:#FDFAF4;border:1px solid #E2D8CC;border-left:3px solid #A87C38;border-radius:0 10px 10px 0;padding:18px 22px;margin-bottom:20px;}
+.philosophy p{font-size:14px;line-height:1.8;color:#5E5248;}
+.philosophy em{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#241E18;}
+
+/* Steps */
+.steps{list-style:none;padding:0;}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid #E2D8CC;}
+.step:last-child{border-bottom:none;}
+.step-num{width:30px;height:30px;border-radius:50%;background:#16293D;color:#C9A870;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-body{}
+.step-title{font-size:15px;font-weight:500;color:#241E18;margin-bottom:4px;}
+.step-desc{font-size:13px;color:#5E5248;line-height:1.7;}
+.step-url{display:inline-block;margin-top:5px;font-size:11px;color:#5C8FB5;text-decoration:none;}
+.step-url:hover{text-decoration:underline;}
+.step-code{display:inline-block;background:#EDE7DC;border-radius:4px;padding:2px 8px;font-family:monospace;font-size:12px;color:#5E5248;margin-top:4px;}
+
+/* Callouts */
+.callout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.callout{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:10px;padding:14px 16px;}
+.callout-label{font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#A87C38;margin-bottom:5px;}
+.callout-text{font-size:12px;color:#5E5248;line-height:1.6;}
+
+/* Daily workflow */
+.workflow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.workflow-item{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:10px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;}
+.workflow-num{width:22px;height:22px;border-radius:50%;background:#F6F1E9;border:1px solid #E2D8CC;font-size:11px;font-weight:500;color:#9E9288;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.workflow-title{font-size:12px;font-weight:500;color:#241E18;margin-bottom:3px;}
+.workflow-desc{font-size:11px;color:#5E5248;line-height:1.5;}
+
+/* Rule box */
+.rule-box{background:#FDFAF4;border:1.5px solid #B0607A;border-radius:10px;padding:20px 22px;margin-bottom:20px;}
+.rule-eyebrow{font-size:9px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#B0607A;margin-bottom:8px;}
+.rule-text{font-size:14px;color:#5E5248;line-height:1.8;}
+
+/* Claude box */
+.claude-box{background:#16293D;border-radius:10px;padding:22px 24px;margin-bottom:20px;}
+.claude-eyebrow{font-size:9px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#C9A870;margin-bottom:8px;}
+.claude-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:#F6F1E9;margin-bottom:10px;}
+.claude-text{font-size:13px;color:rgba(246,241,233,0.7);line-height:1.8;margin-bottom:12px;}
+.claude-example{background:rgba(201,168,112,0.1);border:1px solid rgba(201,168,112,0.2);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+.claude-example-label{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(201,168,112,0.55);margin-bottom:6px;}
+.claude-example-text{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:rgba(246,241,233,0.75);line-height:1.6;}
+.claude-url{font-size:11px;color:rgba(201,168,112,0.5);letter-spacing:0.05em;}
+
+/* Upgrade box */
+.upgrade-box{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:10px;padding:20px 22px;}
+.upgrade-eyebrow{font-size:9px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#4E7C5A;margin-bottom:8px;}
+.upgrade-text{font-size:13px;color:#5E5248;line-height:1.8;}
+
+/* Footer */
+.footer{background:#16293D;padding:32px 20px;margin-top:48px;text-align:center;}
+.footer-inner{max-width:640px;margin:0 auto;}
+.footer-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:22px;letter-spacing:0.15em;text-transform:uppercase;color:#F6F1E9;margin-bottom:6px;}
+.footer-sub{font-size:11px;color:rgba(201,168,112,0.45);letter-spacing:0.1em;margin-bottom:24px;}
+.footer-contact{font-size:13px;color:rgba(246,241,233,0.55);margin-bottom:6px;}
+.footer-email{color:#C9A870;text-decoration:none;font-size:13px;}
+.footer-email:hover{text-decoration:underline;}
+.footer-built{font-size:10px;color:rgba(201,168,112,0.25);margin-top:20px;letter-spacing:0.08em;}
+
+/* Divider */
+.divider{border:none;border-top:1px solid #E2D8CC;margin:36px 0;}
+
+/* Mock elements */
+.mock-dash{background:#16293D;border-radius:10px;padding:12px 14px;margin:12px 0;}
+.mock-tiles{display:flex;gap:8px;margin-top:10px;}
+.mock-tile{border-radius:7px;padding:8px 10px;flex:1;text-align:center;}
+.mock-card{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:10px;padding:10px 12px;margin-top:8px;}
+.mock-name{font-family:'Cormorant Garamond',serif;font-size:17px;color:#241E18;}
+.mock-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;line-height:1.7;}
+.mock-starter{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:#7E6B58;margin:3px 0 5px;}
+.mock-footer-row{display:flex;justify-content:space-between;align-items:center;}
+.mock-phone{font-size:10px;color:#5E5248;}
+.mock-due{font-size:9px;font-weight:500;}
+.mock-ql{border:1px solid #C5B59A;border-radius:5px;padding:2px 7px;font-size:8px;color:#5E5248;letter-spacing:0.04em;text-transform:uppercase;background:transparent;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <svg width="64" height="64" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 20px;">
+      <line x1="80" y1="28" x2="80" y2="6" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="120" y1="42.9" x2="133.9" y2="34.9" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="132" y1="80" x2="154" y2="80" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="120" y1="117.1" x2="130.9" y2="125.1" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="80" y1="132" x2="80" y2="154" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="40" y1="117.1" x2="26.1" y2="127.1" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="28" y1="80" x2="6" y2="80" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <line x1="40" y1="42.9" x2="27.1" y2="33.9" stroke="#C9A870" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <circle cx="80" cy="80" r="22" fill="none" stroke="#C9A870" stroke-width="1.5" opacity="0.85"/>
+      <circle cx="80" cy="80" r="36" fill="none" stroke="#C9A870" stroke-width="1.2" opacity="0.65"/>
+      <circle cx="80" cy="80" r="52" fill="none" stroke="#C9A870" stroke-width="1" opacity="0.45"/>
+      <circle cx="80" cy="80" r="5" fill="#C9A870"/>
+    </svg>
+    <div class="hero-eyebrow">A contact rhythm system</div>
+    <div class="hero-title">Small Circles</div>
+    <div class="hero-sub">Your people. Your rhythm. Who do you call today?</div>
+    <a href="https://github.com/bluestarplanet/small-circles-demo/blob/main/index.html" target="_blank" class="hero-cta">Get the code</a>
+    <div class="hero-note">Free to set up · Hosted on GitHub · Takes about 15 minutes</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="section">
+    <div class="section-eyebrow">What it is</div>
+    <div class="section-title">Not a CRM. A rhythm.</div>
+    <div class="philosophy">
+      <p>Most contact tools ask you to manage data. Small Circles asks you to maintain relationships. The only rule: <em>every contact should always have a next action date.</em> Not a pipeline. Not a score. Just your people, your rhythm, and a clear answer to one question — who do I call today?</p>
+    </div>
+    <div class="mock-dash">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:7px;font-weight:500;letter-spacing:0.2em;color:#C9A870;text-transform:uppercase;margin-bottom:3px;">Small Circles</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;color:#F6F1E9;">Thursday, April 24</div>
+        </div>
+        <svg width="34" height="34" viewBox="0 0 160 160"><circle cx="80" cy="80" r="22" fill="none" stroke="#C9A870" stroke-width="2" opacity="0.85"/><circle cx="80" cy="80" r="36" fill="none" stroke="#C9A870" stroke-width="1.5" opacity="0.6"/><circle cx="80" cy="80" r="5" fill="#C9A870"/></svg>
+      </div>
+      <div class="mock-tiles">
+        <div class="mock-tile" style="background:rgba(176,96,122,0.2);">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:#EECDD6;">2</div>
+          <div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:#EECDD6;opacity:0.65;margin-top:1px;">Today</div>
+        </div>
+        <div class="mock-tile" style="background:rgba(92,143,181,0.2);">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:#C4D9EE;">5</div>
+          <div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:#C4D9EE;opacity:0.65;margin-top:1px;">This Week</div>
+        </div>
+        <div class="mock-tile" style="background:rgba(255,255,255,0.06);">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:#D5CEC5;">12</div>
+          <div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:#D5CEC5;opacity:0.65;margin-top:1px;">Unscheduled</div>
+        </div>
+      </div>
+    </div>
+    <div class="mock-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+        <span class="mock-name">Jane Smith</span>
+        <div style="display:flex;gap:4px;">
+          <span class="mock-badge" style="color:#B0607A;background:#EECDD6;">Pulse</span>
+          <span class="mock-badge" style="color:#5E5248;background:#EDEAE4;">Signal</span>
+        </div>
+      </div>
+      <div class="mock-starter">She asked about market trends last week — follow up</div>
+      <div class="mock-footer-row">
+        <span><span class="mock-phone">(310) 555-0101 &nbsp;</span><span class="mock-due" style="color:#B0607A;">Call · Today</span></span>
+        <span class="mock-ql">Quick Log</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="section">
+    <div class="section-eyebrow">Getting set up</div>
+    <div class="section-title">Five steps. About 15 minutes.</div>
+    <ul class="steps">
+      <li class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Create a free GitHub account</div>
+          <div class="step-desc">GitHub is a free website that stores files and publishes them as live web pages. Sign up with your Google account — no coding knowledge needed.</div>
+          <a href="https://github.com" target="_blank" class="step-url">github.com → Sign up</a>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Create a new repository</div>
+          <div class="step-desc">Click the + button in the top right → New repository. Name it <span class="step-code">small-circles</span>. Set it to Public, check "Add a README", click Create.</div>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Copy and paste the code</div>
+          <div class="step-desc">Click the button below to open the app code on GitHub. Click "Copy raw file" (the copy icon near the top right). Back in your new repository, click Add file → Create new file. Name it <span class="step-code">index.html</span>, paste the code, and click Commit changes.</div>
+          <a href="https://github.com/bluestarplanet/small-circles-demo/blob/main/index.html" target="_blank" class="step-url">Open the code on GitHub →</a>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Enable GitHub Pages</div>
+          <div class="step-desc">Inside your repository, click Settings → Pages in the left sidebar. Under Branch, select main and click Save. Wait about 60 seconds.</div>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Bookmark your personal URL</div>
+          <div class="step-desc">Your app is now live. Bookmark it and add it to your phone's home screen as a web app.</div>
+          <div class="step-url" style="font-style:italic;color:#9E9288;">yourusername.github.io/small-circles</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="section">
+    <div class="section-eyebrow">Using it every day</div>
+    <div class="section-title">Open it. Work through it. Close it.</div>
+    <div class="callout-grid">
+      <div class="callout"><div class="callout-label">Frequency badges</div><div class="callout-text">Pulse (weekly) · Flow (monthly) · Phase (quarterly) · Revolve (annually) · Rest (when it feels right)</div></div>
+      <div class="callout"><div class="callout-label">Status badges</div><div class="callout-text">Static · Signal · Lock · Echo · Relay — tracks where each relationship stands</div></div>
+      <div class="callout"><div class="callout-label">Quick Log</div><div class="callout-text">One tap logs today's contact and auto-advances the next action date by your frequency interval</div></div>
+      <div class="callout"><div class="callout-label">Navigation</div><div class="callout-text">Use ‹ › inside a contact to move through your list without going back — built for calling workflows</div></div>
+    </div>
+    <div class="workflow" style="margin-top:16px;">
+      <div class="workflow-item"><div class="workflow-num">1</div><div><div class="workflow-title">Open the dashboard</div><div class="workflow-desc">See Today, This Week, and who's unscheduled</div></div></div>
+      <div class="workflow-item"><div class="workflow-num">2</div><div><div class="workflow-title">Work through the list</div><div class="workflow-desc">Tap a contact, make your call, log it</div></div></div>
+      <div class="workflow-item"><div class="workflow-num">3</div><div><div class="workflow-title">Quick Log after each call</div><div class="workflow-desc">Logs today and sets the next date automatically</div></div></div>
+      <div class="workflow-item"><div class="workflow-num">4</div><div><div class="workflow-title">Always leave with a date</div><div class="workflow-desc">If it has no next action date, it doesn't exist</div></div></div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="section">
+    <div class="section-eyebrow">The one rule</div>
+    <div class="rule-box">
+      <div class="rule-eyebrow">Pick one browser on one device</div>
+      <p class="rule-text">Your contacts save automatically to whichever browser you use on whichever device you use. Chrome on your laptop works well. Stick to that one place and everything persists perfectly. Opening the app in a different browser or on a different device will show a fresh copy — your data won't follow you until you set up cross-device sync (see below).</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Make it your own</div>
+    <div class="claude-box">
+      <div class="claude-eyebrow">Built to be customized with Claude</div>
+      <div class="claude-title">Don't like something? Change it in 30 seconds.</div>
+      <p class="claude-text">Small Circles was built using Claude, Anthropic's AI assistant — and that means it's designed to be modified by anyone, no coding required. Take your index.html file to claude.ai, describe what you want, and Claude will update the code for you. Paste it back into GitHub and you're done.</p>
+      <div class="claude-example">
+        <div class="claude-example-label">Things you can ask Claude to change</div>
+        <div class="claude-example-text">"Change the color scheme to navy and forest green"<br/>"Remove the Phase and Revolve frequency tiers"<br/>"Add a field for the contact's neighborhood"<br/>"Make the font larger on the contact cards"</div>
+      </div>
+      <div class="claude-url">claude.ai · Free to use · No account required to try</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Want it everywhere?</div>
+    <div class="upgrade-box">
+      <div class="upgrade-eyebrow">Cross-device sync — free upgrade</div>
+      <p class="upgrade-text">By default your contacts save to your browser on one device. To sync across your phone, laptop, and anywhere else, you can connect Small Circles to a free database called Supabase. Setup takes about 15 minutes and costs nothing.<br/><br/>The easiest way: go to claude.ai and say "Help me add Supabase sync to my Small Circles app." Claude will walk you through every step.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div class="footer-inner">
+    <svg width="40" height="40" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 14px;opacity:0.6;">
+      <circle cx="80" cy="80" r="22" fill="none" stroke="#C9A870" stroke-width="2" opacity="0.85"/>
+      <circle cx="80" cy="80" r="36" fill="none" stroke="#C9A870" stroke-width="1.2" opacity="0.55"/>
+      <circle cx="80" cy="80" r="5" fill="#C9A870"/>
+    </svg>
+    <div class="footer-title">Small Circles</div>
+    <div class="footer-sub">A contact rhythm system for real estate</div>
+    <div class="footer-contact">Questions? Reach out to Scott —</div>
+    <a href="mailto:scott.antonucci@sothebys.realty" class="footer-email">scott.antonucci@sothebys.realty</a>
+    <div class="footer-built">Built with Claude · claude.ai</div>
+  </div>
+</div>
+
+</body>
+</html>
