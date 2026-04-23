@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Small Circles</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{height:100%;width:100%;}
+body{background:#F6F1E9;font-family:'Inter',sans-serif;color:#241E18;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#C5B59A;border-radius:2px;}::-webkit-scrollbar-track{background:transparent;}
+@keyframes pulsarAnim{0%{transform:scale(1);opacity:0.9;}50%{transform:scale(1.18);opacity:0.45;}100%{transform:scale(1);opacity:0.9;}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
+.pa{animation:pulsarAnim 2s ease-in-out 2;animation-fill-mode:forwards;transform-origin:center;}
+.it{animation:fadeUp 1s ease-out 1.5s both;}.is{animation:fadeUp 1s ease-out 2.2s both;}
+.iin{animation:fadeIn 0.3s ease-out both;}.iout{animation:fadeOut 0.8s ease-out forwards;pointer-events:none;}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-family:'Inter',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;line-height:1.7;white-space:nowrap;}
+.pill{border:1px solid #C5B59A;background:transparent;border-radius:20px;padding:5px 13px;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;letter-spacing:0.03em;white-space:nowrap;}
+.pill:hover{opacity:0.75;}
+input,textarea,select{font-family:'Inter',sans-serif;font-size:13px;background:#F6F1E9;border:1px solid #E2D8CC;border-radius:8px;padding:10px 12px;color:#241E18;width:100%;outline:none;transition:border-color 0.15s;}
+input:focus,textarea:focus,select:focus{border-color:#C5B59A;}
+input[type="date"]{cursor:pointer;}
+textarea{resize:vertical;min-height:72px;}
+.sl{font-family:'Inter',sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.13em;text-transform:uppercase;color:#9E9288;margin-bottom:8px;display:block;}
+.card{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow 0.15s;}
+.card:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.ql{border:1px solid #C5B59A;background:transparent;border-radius:6px;padding:3px 9px;font-size:9.5px;font-family:'Inter',sans-serif;font-weight:500;color:#5E5248;cursor:pointer;transition:all 0.15s;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
+.ql:hover{background:#EDE7DC;}.ql.done{background:#4E7C5A;color:#fff;border-color:#4E7C5A;}
+.sv{width:100%;padding:13px;border:none;border-radius:10px;background:#16293D;color:#F6F1E9;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.3s;letter-spacing:0.05em;}
+.sv:hover{background:#243C58;}.sv.ok{background:#4E7C5A;}
+.tile{border-radius:10px;padding:12px 14px;flex:1;text-align:center;}
+.si{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:24px;padding:9px 16px;font-size:13px;font-family:'Inter',sans-serif;color:#241E18;outline:none;width:100%;}
+.si:focus{border-color:#C5B59A;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+const FREQ={
+  pulse:{key:'pulse',label:'Pulse',desc:'Weekly',color:'#B0607A',bg:'#EECDD6',days:7},
+  flow:{key:'flow',label:'Flow',desc:'Monthly',color:'#5C8FB5',bg:'#C4D9EE',days:30},
+  phase:{key:'phase',label:'Phase',desc:'Quarterly',color:'#A87C38',bg:'#E5D2A8',days:90},
+  revolve:{key:'revolve',label:'Revolve',desc:'Annually',color:'#4E7C5A',bg:'#C0D4C4',days:365},
+  rest:{key:'rest',label:'Rest',desc:'When it feels right',color:'#6E6158',bg:'#D5CEC5',days:null},
+};
+const STATUS={
+  static:{key:'static',label:'Static',desc:'New, not yet in motion'},
+  signal:{key:'signal',label:'Signal',desc:'Nurturing, relationship building'},
+  lock:{key:'lock',label:'Lock',desc:'Active — something real in motion'},
+  echo:{key:'echo',label:'Echo',desc:'Past client'},
+  relay:{key:'relay',label:'Relay',desc:'Referral source'},
+};
+
+const todayStr=()=>new Date().toISOString().split('T')[0];
+const addDays=(str,n)=>{const d=new Date((str||todayStr())+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];};
+const daysUntil=str=>str?Math.round((new Date(str+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000):null;
+const fmtDate=str=>str?new Date(str+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+const uid=()=>Math.random().toString(36).slice(2,10);
+const parseBday=str=>{
+  if(!str)return null;
+  const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const parts=str.trim().toLowerCase().split(/[\s,]+/);
+  if(parts.length<2)return null;
+  const mi=months.indexOf(parts[0]);const day=parseInt(parts[1]);
+  if(mi===-1||isNaN(day))return null;
+  const now=new Date();const d=new Date(now.getFullYear(),mi,day);
+  if(d<now)d.setFullYear(now.getFullYear()+1);
+  return d;
+};
+const bdayIn14=str=>{const d=parseBday(str);if(!d)return false;const diff=(d-new Date())/86400000;return diff>=0&&diff<=14;};
+const bdayDays=str=>{const d=parseBday(str);if(!d)return null;return Math.max(0,Math.round((d-new Date())/86400000));};
+
+// Demo contacts — replace these with your own people
+const DEFAULTS=[
+  {
+    id:uid(),fn:'Jane',ln:'Smith',ph:'(310) 555-0101',em:'jane.smith@email.com',
+    src:'SOI',met:addDays(todayStr(),-45),lc:addDays(todayStr(),-7),meth:'Call',res:'Warming up, asked about market',
+    na:'Call',nad:todayStr(),
+    bn:'1400000',notes:'Two kids, dog named Biscuit. Wants good schools. Prefers the west side.',
+    freq:'pulse',status:'signal',birthday:'',
+    starter:'She asked about market trends last week — follow up on that',
+    log:[{text:'Great call. She\'s getting serious. Mentioned spring timeline.',date:addDays(todayStr(),-7)}]
+  },
+  {
+    id:uid(),fn:'Robert',ln:'Jones',ph:'(323) 555-0187',em:'rjones@email.com',
+    src:'Open House',met:addDays(todayStr(),-14),lc:addDays(todayStr(),-14),meth:'In person',res:'Very warm, took a card',
+    na:'Send listings',nad:addDays(todayStr(),1),
+    bn:'950000',notes:'First-time buyer. Came with his girlfriend. Interested in Silver Lake and Echo Park.',
+    freq:'flow',status:'signal',birthday:'',
+    starter:'Met at the Fountain Ave open house — send Echo Park listings',
+    log:[{text:'Met at open house. Friendly, asked good questions. Girlfriend seems to be the decision maker.',date:addDays(todayStr(),-14)}]
+  },
+  {
+    id:uid(),fn:'Mary',ln:'Williams',ph:'(818) 555-0234',em:'mwilliams@email.com',
+    src:'SOI',met:addDays(todayStr(),-730),lc:addDays(todayStr(),-20),meth:'Text',res:'Happy in the house, referred a neighbor',
+    na:'Birthday note',nad:addDays(todayStr(),4),
+    bn:'',notes:'Closed 2023. Loves the house. Has referred two people. Birthday coming up — always appreciates a personal note.',
+    freq:'revolve',status:'echo',birthday:new Date(new Date().setDate(new Date().getDate()+4)).toLocaleDateString('en-US',{month:'long',day:'numeric'}),
+    starter:'Birthday in 4 days — send a handwritten note',
+    log:[{text:'Closed on Laurel Canyon house. Smooth transaction.',date:addDays(todayStr(),-730)},{text:'Referred her neighbor Dan. Warm intro.',date:addDays(todayStr(),-60)}]
+  },
+  {
+    id:uid(),fn:'Tom',ln:'Brown',ph:'(213) 555-0312',em:'tbrown@email.com',
+    src:'SOI',met:addDays(todayStr(),-180),lc:addDays(todayStr(),-5),meth:'Lunch',res:'Sends 2-3 referrals a year',
+    na:'Thank you note',nad:addDays(todayStr(),6),
+    bn:'',notes:'Contractor. Knows everyone. Sends steady referrals without being asked. Lunch every couple months keeps this warm.',
+    freq:'flow',status:'relay',birthday:'',
+    starter:'Last referral was Lisa Chen — thank him and keep it warm',
+    log:[{text:'Lunch at Gjusta. He mentioned two people who might be selling soon.',date:addDays(todayStr(),-5)}]
+  },
+  {
+    id:uid(),fn:'Lisa',ln:'Davis',ph:'(424) 555-0455',em:'ldavis@email.com',
+    src:'Open House',met:addDays(todayStr(),-3),lc:addDays(todayStr(),-3),meth:'In person',res:'Took info sheet, seemed interested',
+    na:'Follow up',nad:'',
+    bn:'2000000',notes:'Came alone. Dressed well. Asked detailed questions about the neighborhood. Budget feels higher than she let on.',
+    freq:'phase',status:'static',birthday:'',
+    starter:'Just met — reach out when the moment feels right',
+    log:[{text:'Quiet but engaged at the open house. Worth a follow up.',date:addDays(todayStr(),-3)}]
+  },
+];
+
+const STORAGE_KEY='sc-demo-v1';
+const load=()=>{try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):null;}catch{return null;}};
+const save=d=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{}};
+
+function Pulsar({size=80,color='#C9A870',animate=false}){
+  const cx=80,cy=80,outer=52,circles=[22,36,52],lens=[22,16,11];
+  return(
+    <svg width={size} height={size} viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"
+      className={animate?'pa':''} style={{display:'block',overflow:'visible'}}>
+      {Array.from({length:12},(_,i)=>{
+        const a=((i*30-90)*Math.PI)/180,l=lens[i%3];
+        return <line key={i} x1={cx+Math.cos(a)*outer} y1={cy+Math.sin(a)*outer}
+          x2={cx+Math.cos(a)*(outer+l)} y2={cy+Math.sin(a)*(outer+l)}
+          stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.85"/>;
+      })}
+      {circles.map((r,i)=><circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="1.2" opacity={0.85-i*0.2}/>)}
+      <circle cx={cx} cy={cy} r="4" fill={color}/>
+    </svg>
+  );
+}
+
+function Intro({phase}){
+  return(
+    <div className={phase==='fading'?'iout':'iin'}
+      style={{position:'fixed',inset:0,background:'#16293D',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:1000,gap:30}}>
+      <Pulsar size={150} color="#C9A870" animate/>
+      <div style={{textAlign:'center'}}>
+        <div className="it" style={{fontFamily:'Cormorant Garamond',fontWeight:300,fontSize:30,letterSpacing:'0.2em',color:'#F6F1E9',textTransform:'uppercase'}}>Small Circles</div>
+        <div className="is" style={{fontFamily:'Inter',fontSize:9.5,letterSpacing:'0.22em',color:'#C9A870',opacity:0.55,textTransform:'uppercase',marginTop:10}}>Your Contact System</div>
+      </div>
+    </div>
+  );
+}
+
+const Bdg=({children,color,bg})=><span className="badge" style={{color,background:bg}}>{children}</span>;
+const Accent=({color,label})=>(
+  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+    <div style={{width:3,height:14,borderRadius:2,background:color,flexShrink:0}}/>
+    <span className="sl" style={{marginBottom:0}}>{label}</span>
+  </div>
+);
+const Fld=({label,children})=><div style={{marginBottom:18}}><span className="sl">{label}</span>{children}</div>;
+
+function CCard({c,onOpen,onQL,logged}){
+  const fq=FREQ[c.freq],st=STATUS[c.status],dd=c.nad?daysUntil(c.nad):null;
+  let nc='#9E9288',nl='';
+  if(c.nad){
+    if(dd<0){nc='#B03030';nl=`${Math.abs(dd)}d overdue`;}
+    else if(dd===0){nc='#B0607A';nl='Today';}
+    else if(dd<=7){nc='#5C8FB5';nl=`in ${dd}d`;}
+    else{nc='#9E9288';nl=`in ${dd}d`;}
+  }
+  return(
+    <div className="card" onClick={()=>onOpen(c.id)}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:4}}>
+        <span style={{fontFamily:'Cormorant Garamond',fontSize:20,fontWeight:400,color:'#241E18',lineHeight:1.2}}>{c.fn} {c.ln}</span>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'flex-end',flexShrink:0}}>
+          {fq&&<Bdg color={fq.color} bg={fq.bg}>{fq.label}</Bdg>}
+          {st&&<Bdg color="#5E5248" bg="#EDEAE4">{st.label}</Bdg>}
+        </div>
+      </div>
+      {c.starter&&<div style={{fontFamily:'Cormorant Garamond',fontStyle:'italic',fontSize:14,color:'#7E6B58',marginBottom:6,lineHeight:1.45}}>{c.starter}</div>}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:6}}>
+        <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',minWidth:0}}>
+          {c.ph&&<span style={{fontSize:12,color:'#5E5248'}}>{c.ph}</span>}
+          {c.nad?<span style={{fontSize:11,color:nc,fontWeight:500}}>{c.na&&c.na+' · '}{nl}</span>
+            :<span style={{fontSize:11,color:'#9E9288',fontStyle:'italic'}}>Unscheduled</span>}
+        </div>
+        <button className={`ql${logged?' done':''}`} onClick={e=>{e.stopPropagation();onQL(c.id);}}>
+          {logged?'✓ Logged':'Quick Log'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({contacts,onOpen,onQL,logged,onLegend,onAdd,onUnsched}){
+  const t=todayStr();
+  const overdue=contacts.filter(c=>c.nad&&c.nad<t).sort((a,b)=>a.nad.localeCompare(b.nad));
+  const today=contacts.filter(c=>c.nad===t);
+  const week=contacts.filter(c=>c.nad&&c.nad>t&&daysUntil(c.nad)<=7).sort((a,b)=>a.nad.localeCompare(b.nad));
+  const unsched=contacts.filter(c=>!c.nad);
+  const bdays=contacts.filter(c=>bdayIn14(c.birthday)).sort((a,b)=>(bdayDays(a.birthday)||99)-(bdayDays(b.birthday)||99));
+  const empty=overdue.length===0&&today.length===0&&week.length===0;
+  const dl=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{background:'#16293D',padding:'18px 20px',flexShrink:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+          <div>
+            <div style={{fontFamily:'Inter',fontSize:8.5,fontWeight:500,letterSpacing:'0.22em',color:'#C9A870',textTransform:'uppercase',marginBottom:5}}>Small Circles</div>
+            <div style={{fontFamily:'Cormorant Garamond',fontSize:20,fontWeight:300,color:'#F6F1E9'}}>{dl}</div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <button onClick={onAdd} style={{background:'rgba(201,168,112,0.15)',border:'1px solid rgba(201,168,112,0.3)',borderRadius:'50%',width:30,height:30,cursor:'pointer',color:'#C9A870',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+            <button onClick={onLegend} style={{background:'transparent',border:'1px solid rgba(201,168,112,0.3)',borderRadius:'50%',width:28,height:28,cursor:'pointer',color:'#C9A870',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontStyle:'italic',fontFamily:'serif',fontWeight:'bold'}}>i</button>
+            <Pulsar size={46} color="#C9A870"/>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:10,marginTop:16}}>
+          {[{n:today.length,label:'Today',bg:'rgba(176,96,122,0.18)',c:'#EECDD6'},{n:week.length,label:'This Week',bg:'rgba(92,143,181,0.18)',c:'#C4D9EE'},{n:unsched.length,label:'Unscheduled',bg:'rgba(255,255,255,0.06)',c:'#D5CEC5'}].map(x=>(
+            <div key={x.label} className="tile" style={{background:x.bg}}>
+              <div style={{fontFamily:'Cormorant Garamond',fontSize:28,fontWeight:300,color:x.c}}>{x.n}</div>
+              <div style={{fontFamily:'Inter',fontSize:9,letterSpacing:'0.12em',color:x.c,opacity:0.65,textTransform:'uppercase',marginTop:2}}>{x.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'18px 14px 110px'}}>
+        {empty&&bdays.length===0&&(
+          <div style={{textAlign:'center',paddingTop:70}}>
+            <Pulsar size={70} color="#C5B59A"/>
+            <div style={{fontFamily:'Cormorant Garamond',fontSize:26,fontWeight:300,color:'#9E9288',marginTop:18,letterSpacing:'0.05em'}}>You're clear.</div>
+          </div>
+        )}
+        {overdue.length>0&&<div style={{marginBottom:22}}><Accent color="#B03030" label="Overdue"/>{overdue.map(c=><CCard key={c.id} c={c} onOpen={onOpen} onQL={onQL} logged={!!logged[c.id]}/>)}</div>}
+        {today.length>0&&<div style={{marginBottom:22}}><Accent color="#B0607A" label="Today"/>{today.map(c=><CCard key={c.id} c={c} onOpen={onOpen} onQL={onQL} logged={!!logged[c.id]}/>)}</div>}
+        {week.length>0&&<div style={{marginBottom:22}}><Accent color="#5C8FB5" label="This Week"/>{week.map(c=><CCard key={c.id} c={c} onOpen={onOpen} onQL={onQL} logged={!!logged[c.id]}/>)}</div>}
+        {bdays.length>0&&(
+          <div style={{marginBottom:22}}>
+            <Accent color="#A87C38" label="Upcoming Birthdays"/>
+            {bdays.map(c=>(
+              <div key={c.id} className="card" onClick={()=>onOpen(c.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',border:'1px solid #E5D2A8'}}>
+                <div>
+                  <span style={{fontFamily:'Cormorant Garamond',fontSize:18,fontWeight:400}}>{c.fn} {c.ln}</span>
+                  {c.birthday&&<span style={{fontSize:12,color:'#A87C38',marginLeft:10}}>{c.birthday}</span>}
+                </div>
+                <span style={{fontSize:11,color:'#A87C38',fontWeight:500}}>{bdayDays(c.birthday)===0?'Today 🎂':`in ${bdayDays(c.birthday)}d`}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {unsched.length>0&&(
+          <div style={{borderTop:'1px solid #E2D8CC',paddingTop:18,marginTop:6}}>
+            <div className="card" onClick={onUnsched} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontFamily:'Cormorant Garamond',fontSize:17,fontStyle:'italic',color:'#5E5248'}}>{unsched.length} contact{unsched.length!==1?'s':''} unscheduled</span>
+              <span style={{color:'#9E9288',fontSize:20}}>›</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function List({contacts,freqFilter,onOpen,onQL,logged,onAdd}){
+  const [search,setSearch]=useState('');
+  const [sf,setSf]=useState(null);
+  const title=freqFilter==='unscheduled'?'Unscheduled':freqFilter?FREQ[freqFilter]?.label:'All Contacts';
+  const tc=freqFilter&&FREQ[freqFilter]?FREQ[freqFilter].color:'#241E18';
+  const list=contacts
+    .filter(c=>freqFilter==='unscheduled'?!c.nad:freqFilter?c.freq===freqFilter:true)
+    .filter(c=>sf?c.status===sf:true)
+    .filter(c=>{
+      if(!search)return true;
+      const q=search.toLowerCase();
+      return `${c.fn} ${c.ln}`.toLowerCase().includes(q)||(c.ph&&c.ph.includes(q))||(c.notes&&c.notes.toLowerCase().includes(q))||(c.starter&&c.starter.toLowerCase().includes(q));
+    })
+    .sort((a,b)=>{
+      if(a.nad&&b.nad)return a.nad.localeCompare(b.nad);
+      if(a.nad)return -1;if(b.nad)return 1;
+      return `${a.ln}${a.fn}`.localeCompare(`${b.ln}${b.fn}`);
+    });
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{background:'#FDFAF4',borderBottom:'1px solid #E2D8CC',flexShrink:0,padding:'14px 16px 10px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+          <div>
+            <div style={{fontFamily:'Cormorant Garamond',fontSize:22,fontWeight:400,color:tc}}>{title}</div>
+            <div style={{fontFamily:'Inter',fontSize:10.5,color:'#9E9288',marginTop:2}}>{list.length} contacts</div>
+          </div>
+          <button onClick={onAdd} style={{background:'#16293D',color:'#F6F1E9',border:'none',borderRadius:'50%',width:34,height:34,fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</button>
+        </div>
+        <input className="si" placeholder="Search name, notes, phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <div style={{display:'flex',gap:5,marginTop:10,overflowX:'auto',paddingBottom:2}}>
+          {[null,...Object.values(STATUS)].map(s=>(
+            <button key={s?.key||'all'} className="pill"
+              onClick={()=>setSf(s?s.key:null)}
+              style={{color:sf===(s?.key||null)?'#243C58':'#5E5248',background:sf===(s?.key||null)?'#C4D9EE':'transparent',borderColor:sf===(s?.key||null)?'#5C8FB5':'#C5B59A',fontSize:10,padding:'3px 10px'}}>
+              {s?s.label:'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px 110px'}}>
+        {list.length===0&&<div style={{textAlign:'center',paddingTop:60,fontFamily:'Cormorant Garamond',fontSize:20,fontStyle:'italic',color:'#9E9288'}}>No contacts found</div>}
+        {list.map(c=><CCard key={c.id} c={c} onOpen={onOpen} onQL={onQL} logged={!!logged[c.id]}/>)}
+      </div>
+    </div>
+  );
+}
+
+function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
+  const [f,setF]=useState({...contact});
+  const [note,setNote]=useState('');
+  const [saved,setSaved]=useState(false);
+  const [cdel,setCdel]=useState(false);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  const hFreq=k=>{const days=FREQ[k]?.days;set('freq',k);if(days)set('nad',addDays(todayStr(),days));};
+  const hSave=()=>{onSave(f);setSaved(true);setTimeout(()=>setSaved(false),2000);};
+  const addNote=()=>{if(!note.trim())return;set('log',[{text:note.trim(),date:todayStr()},...(f.log||[])]);setNote('');};
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{background:'#16293D',padding:'14px 18px',flexShrink:0,display:'flex',alignItems:'center',gap:14}}>
+        <button onClick={onBack} style={{background:'rgba(110,97,88,0.2)',border:'1px solid rgba(110,97,88,0.45)',borderRadius:'50%',width:32,height:32,cursor:'pointer',color:'#9E9288',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:'Cormorant Garamond',fontSize:22,fontWeight:400,color:'#F6F1E9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.fn} {f.ln}</div>
+          <div style={{display:'flex',gap:5,marginTop:4,flexWrap:'wrap'}}>
+            {f.freq&&<Bdg color={FREQ[f.freq]?.color} bg={FREQ[f.freq]?.bg}>{FREQ[f.freq]?.label}</Bdg>}
+            {f.status&&<Bdg color="#9E9288" bg="rgba(255,255,255,0.08)">{STATUS[f.status]?.label}</Bdg>}
+          </div>
+        </div>
+        <div style={{display:'flex',gap:6,flexShrink:0}}>
+          <button onClick={onPrev} disabled={!hasPrev} style={{background:hasPrev?'rgba(201,168,112,0.15)':'rgba(201,168,112,0.05)',border:'1px solid rgba(201,168,112,0.35)',borderRadius:'50%',width:32,height:32,cursor:hasPrev?'pointer':'default',color:hasPrev?'#C9A870':'rgba(201,168,112,0.25)',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}>‹</button>
+          <button onClick={onNext} disabled={!hasNext} style={{background:hasNext?'rgba(201,168,112,0.15)':'rgba(201,168,112,0.05)',border:'1px solid rgba(201,168,112,0.35)',borderRadius:'50%',width:32,height:32,cursor:hasNext?'pointer':'default',color:hasNext?'#C9A870':'rgba(201,168,112,0.25)',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}>›</button>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'18px 16px 40px'}}>
+        <Fld label="Contact Info">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+            <input placeholder="First name" value={f.fn||''} onChange={e=>set('fn',e.target.value)}/>
+            <input placeholder="Last name" value={f.ln||''} onChange={e=>set('ln',e.target.value)}/>
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10}}>
+            <input placeholder="Phone" value={f.ph||''} onChange={e=>set('ph',e.target.value)} style={{flex:1}}/>
+            {f.ph&&<a href={`tel:${f.ph}`} style={{color:'#5C8FB5',fontSize:18,textDecoration:'none',flexShrink:0}}>📞</a>}
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10}}>
+            <input placeholder="Email" value={f.em||''} onChange={e=>set('em',e.target.value)} style={{flex:1}}/>
+            {f.em&&<a href={`mailto:${f.em}`} style={{color:'#5C8FB5',fontSize:18,textDecoration:'none',flexShrink:0}}>✉</a>}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+            <input placeholder="First met" value={f.met||''} onChange={e=>set('met',e.target.value)}/>
+            <input placeholder="Budget" value={f.bn||''} onChange={e=>set('bn',e.target.value)}/>
+          </div>
+          <select value={f.src||'SOI'} onChange={e=>set('src',e.target.value)} style={{marginBottom:10}}>
+            <option value="SOI">SOI</option><option value="Open House">Open House</option>
+          </select>
+          <textarea placeholder="Notes…" value={f.notes||''} onChange={e=>set('notes',e.target.value)}/>
+        </Fld>
+        <Fld label="Frequency">
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {Object.values(FREQ).map(fq=>(
+              <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
+                style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A'}}>{fq.label}</button>
+            ))}
+          </div>
+        </Fld>
+        <Fld label="Status">
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {Object.values(STATUS).map(s=>(
+              <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
+                style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A'}}>{s.label}</button>
+            ))}
+          </div>
+        </Fld>
+        <Fld label="Personal">
+          <input placeholder='Birthday (e.g. "March 15")' value={f.birthday||''} onChange={e=>set('birthday',e.target.value)} style={{marginBottom:10}}/>
+          <input placeholder="Conversation starter…" value={f.starter||''} onChange={e=>set('starter',e.target.value)}/>
+        </Fld>
+        <Fld label="Scheduling">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <input type="date" value={f.nad||''} onChange={e=>set('nad',e.target.value)}/>
+            <input placeholder="Next action" value={f.na||''} onChange={e=>set('na',e.target.value)}/>
+          </div>
+        </Fld>
+        <Fld label="Last Contact">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+            <input type="date" value={f.lc||''} onChange={e=>set('lc',e.target.value)}/>
+            <input placeholder="Method" value={f.meth||''} onChange={e=>set('meth',e.target.value)}/>
+            <input placeholder="Result" value={f.res||''} onChange={e=>set('res',e.target.value)}/>
+          </div>
+        </Fld>
+        <Fld label="Notes Log">
+          <div style={{display:'flex',gap:8,marginBottom:12}}>
+            <textarea placeholder="Add a note…" value={note} onChange={e=>setNote(e.target.value)} style={{flex:1,minHeight:60}}/>
+            <button onClick={addNote} style={{background:'#16293D',color:'#F6F1E9',border:'none',borderRadius:8,width:40,cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',alignSelf:'flex-end',height:42,flexShrink:0}}>+</button>
+          </div>
+          {(f.log||[]).length===0&&<div style={{color:'#9E9288',fontSize:12,fontStyle:'italic',textAlign:'center',padding:'10px 0'}}>No entries yet</div>}
+          {(f.log||[]).map((e,i)=>(
+            <div key={i} style={{background:'#F0EDE7',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
+              <div style={{fontSize:10.5,color:'#9E9288',marginBottom:4}}>{fmtDate(e.date)}</div>
+              <div style={{fontSize:13,color:'#241E18',lineHeight:1.5}}>{e.text}</div>
+            </div>
+          ))}
+        </Fld>
+        <button className={`sv${saved?' ok':''}`} onClick={hSave}>{saved?'✓ Saved':'Save Changes'}</button>
+        <div style={{textAlign:'center',marginTop:22}}>
+          {cdel?(
+            <div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'center'}}>
+              <span style={{fontSize:12,color:'#B03030'}}>Remove this contact?</span>
+              <button onClick={()=>onDelete(contact.id)} style={{background:'#B03030',color:'#fff',border:'none',borderRadius:6,padding:'4px 14px',fontSize:12,cursor:'pointer'}}>Confirm</button>
+              <button onClick={()=>setCdel(false)} style={{background:'transparent',border:'1px solid #C5B59A',color:'#5E5248',borderRadius:6,padding:'4px 14px',fontSize:12,cursor:'pointer'}}>Cancel</button>
+            </div>
+          ):(
+            <button onClick={()=>setCdel(true)} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:12,cursor:'pointer',textDecoration:'underline',opacity:0.6}}>Remove from Small Circles</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Add({onSave,onBack}){
+  const [f,setF]=useState({id:uid(),fn:'',ln:'',ph:'',em:'',src:'SOI',met:todayStr(),lc:'',meth:'',res:'',na:'',nad:'',bn:'',notes:'',freq:'flow',status:'static',birthday:'',starter:'',log:[]});
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  const hFreq=k=>{const days=FREQ[k]?.days;set('freq',k);if(days)set('nad',addDays(todayStr(),days));};
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{background:'#16293D',padding:'14px 18px',flexShrink:0,display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={onBack} style={{background:'rgba(110,97,88,0.2)',border:'1px solid rgba(110,97,88,0.45)',borderRadius:'50%',width:32,height:32,cursor:'pointer',color:'#9E9288',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+        <div style={{fontFamily:'Cormorant Garamond',fontSize:22,fontWeight:400,color:'#F6F1E9'}}>New Contact</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'18px 16px 40px'}}>
+        <Fld label="Name *">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <input placeholder="First name" value={f.fn} onChange={e=>set('fn',e.target.value)}/>
+            <input placeholder="Last name" value={f.ln} onChange={e=>set('ln',e.target.value)}/>
+          </div>
+        </Fld>
+        <Fld label="Contact">
+          <input placeholder="Phone" value={f.ph} onChange={e=>set('ph',e.target.value)} style={{marginBottom:10}}/>
+          <input placeholder="Email" value={f.em} onChange={e=>set('em',e.target.value)}/>
+        </Fld>
+        <Fld label="Source">
+          <div style={{display:'flex',gap:8}}>
+            {['SOI','Open House'].map(s=>(
+              <button key={s} className="pill" onClick={()=>set('src',s)}
+                style={{color:f.src===s?'#243C58':'#5E5248',background:f.src===s?'#C4D9EE':'transparent',borderColor:f.src===s?'#5C8FB5':'#C5B59A'}}>{s}</button>
+            ))}
+          </div>
+        </Fld>
+        <Fld label="Frequency">
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {Object.values(FREQ).map(fq=>(
+              <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
+                style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A'}}>{fq.label}</button>
+            ))}
+          </div>
+        </Fld>
+        <Fld label="Status">
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {Object.values(STATUS).map(s=>(
+              <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
+                style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A'}}>{s.label}</button>
+            ))}
+          </div>
+        </Fld>
+        <Fld label="Personal">
+          <input placeholder='Birthday (e.g. "March 15")' value={f.birthday} onChange={e=>set('birthday',e.target.value)} style={{marginBottom:10}}/>
+          <input placeholder="Conversation starter…" value={f.starter} onChange={e=>set('starter',e.target.value)}/>
+        </Fld>
+        <Fld label="Notes">
+          <textarea placeholder="Notes…" value={f.notes} onChange={e=>set('notes',e.target.value)}/>
+        </Fld>
+        <button className="sv" onClick={()=>{if(f.fn.trim())onSave(f);}} style={{opacity:f.fn.trim()?1:0.45}}>Add to Small Circles</button>
+      </div>
+    </div>
+  );
+}
+
+function Legend({onClose}){
+  return(
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'#16293D',zIndex:500,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32}}>
+      <div style={{textAlign:'center',maxWidth:300,width:'100%'}}>
+        <Pulsar size={46} color="#C9A870"/>
+        <div style={{fontFamily:'Cormorant Garamond',fontSize:22,fontWeight:300,color:'#F6F1E9',letterSpacing:'0.14em',marginTop:14,marginBottom:24,textTransform:'uppercase'}}>Legend</div>
+        <div style={{marginBottom:22,textAlign:'left'}}>
+          <div style={{fontFamily:'Inter',fontSize:9,letterSpacing:'0.18em',color:'#C9A870',textTransform:'uppercase',marginBottom:12}}>Frequency</div>
+          {Object.values(FREQ).map(f=>(
+            <div key={f.key} style={{display:'flex',alignItems:'center',gap:10,marginBottom:9}}>
+              <span className="badge" style={{color:f.color,background:f.bg,minWidth:52,justifyContent:'center'}}>{f.label}</span>
+              <span style={{fontFamily:'Cormorant Garamond',fontSize:16,color:'rgba(246,241,233,0.75)'}}>{f.desc}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{textAlign:'left',borderTop:'1px solid rgba(201,168,112,0.2)',paddingTop:20}}>
+          <div style={{fontFamily:'Inter',fontSize:9,letterSpacing:'0.18em',color:'#C9A870',textTransform:'uppercase',marginBottom:12}}>Status</div>
+          {Object.values(STATUS).map(s=>(
+            <div key={s.key} style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:9}}>
+              <span className="badge" style={{color:'#C4D9EE',background:'rgba(92,143,181,0.2)',minWidth:52,justifyContent:'center',flexShrink:0}}>{s.label}</span>
+              <span style={{fontFamily:'Cormorant Garamond',fontSize:15,color:'rgba(246,241,233,0.65)',lineHeight:1.5}}>{s.desc}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{fontFamily:'Inter',fontSize:10,color:'rgba(201,168,112,0.38)',marginTop:24,letterSpacing:'0.1em'}}>Tap anywhere to dismiss</div>
+      </div>
+    </div>
+  );
+}
+
+function BottomNav({active,onNav}){
+  const items=[
+    {key:'home',label:'Home',dot:'#C9A870'},
+    {key:'all',label:'All',dot:'#9E9288'},
+    {key:'pulse',label:'Pulse',dot:FREQ.pulse.color},
+    {key:'flow',label:'Flow',dot:FREQ.flow.color},
+    {key:'phase',label:'Phase',dot:FREQ.phase.color},
+    {key:'revolve',label:'Revolve',dot:FREQ.revolve.color},
+    {key:'rest',label:'Rest',dot:FREQ.rest.color},
+  ];
+  return(
+    <div style={{background:'#FDFAF4',borderTop:'1px solid #E2D8CC',display:'flex',flexShrink:0}}>
+      {items.map(item=>{
+        const isAct=active===item.key;
+        return(
+          <button key={item.key} onClick={()=>onNav(item.key)}
+            style={{flex:1,background:'transparent',border:'none',padding:'10px 4px 9px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+            <div style={{width:6,height:6,borderRadius:'50%',background:isAct?item.dot:'transparent',border:isAct?'none':'1px solid #D5CEC5',transition:'all 0.15s'}}/>
+            <span style={{fontFamily:'Inter',fontSize:8,fontWeight:isAct?500:400,letterSpacing:'0.1em',color:isAct?item.dot:'#9E9288',textTransform:'uppercase',transition:'color 0.15s'}}>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function App(){
+  const [ip,setIp]=useState('visible');
+  const [contacts,setContacts]=useState([]);
+  const [screen,setScreen]=useState('dashboard');
+  const [nav,setNav]=useState('home');
+  const [ff,setFf]=useState(null);
+  const [sid,setSid]=useState(null);
+  const [legend,setLegend]=useState(false);
+  const [logged,setLogged]=useState({});
+  const [prev,setPrev]=useState('dashboard');
+
+  useEffect(()=>{
+    const t1=setTimeout(()=>setIp('fading'),4500);
+    const t2=setTimeout(()=>setIp('done'),5300);
+    const saved=load();
+    setContacts(saved||DEFAULTS);
+    return()=>{clearTimeout(t1);clearTimeout(t2);};
+  },[]);
+
+  const persist=next=>{setContacts(next);save(next);};
+  const handleNav=k=>{
+    setNav(k);
+    if(k==='home'){setScreen('dashboard');}
+    else{setFf(k==='all'?null:k);setScreen('list');}
+  };
+  const openContact=id=>{setPrev(screen);setSid(id);setScreen('detail');};
+  const quickLog=id=>{
+    const c=contacts.find(x=>x.id===id);if(!c)return;
+    const days=FREQ[c.freq]?.days;
+    persist(contacts.map(x=>x.id!==id?x:{...x,lc:todayStr(),meth:'Logged',nad:days?addDays(todayStr(),days):x.nad}));
+    setLogged(p=>({...p,[id]:true}));
+    setTimeout(()=>setLogged(p=>{const n={...p};delete n[id];return n;}),2200);
+  };
+  const saveContact=data=>{
+    const exists=contacts.some(c=>c.id===data.id);
+    persist(exists?contacts.map(c=>c.id===data.id?data:c):[...contacts,data]);
+  };
+  const deleteContact=id=>{
+    persist(contacts.filter(c=>c.id!==id));
+    setScreen(prev==='detail'?'dashboard':prev);
+    setNav('home');
+  };
+  const sel=contacts.find(c=>c.id===sid);
+  const showNav=screen!=='detail'&&screen!=='add';
+
+  return(
+    <>
+      {ip!=='done'&&<Intro phase={ip}/>}
+      {legend&&<Legend onClose={()=>setLegend(false)}/>}
+      <div style={{maxWidth:600,margin:'0 auto',height:'100vh',display:'flex',flexDirection:'column',background:'#F6F1E9',opacity:ip!=='done'?0:1,transition:'opacity 0.5s ease-out'}}>
+        {screen==='dashboard'&&(
+          <Dashboard contacts={contacts} onOpen={openContact} onQL={quickLog} logged={logged}
+            onLegend={()=>setLegend(true)} onAdd={()=>{setPrev(screen);setScreen('add');}}
+            onUnsched={()=>{setFf('unscheduled');setNav('all');setScreen('list');}}/>
+        )}
+        {screen==='list'&&(
+          <List contacts={contacts} freqFilter={ff} onOpen={openContact} onQL={quickLog} logged={logged}
+            onAdd={()=>{setPrev(screen);setScreen('add');}}/>
+        )}
+        {screen==='detail'&&sel&&(()=>{
+          const sorted=[...contacts].sort((a,b)=>{
+            if(a.nad&&b.nad)return a.nad.localeCompare(b.nad);
+            if(a.nad)return -1;if(b.nad)return 1;
+            return `${a.ln}${a.fn}`.localeCompare(`${b.ln}${b.fn}`);
+          });
+          const idx=sorted.findIndex(c=>c.id===sel.id);
+          const nextContact=sorted[idx+1];
+          const prevContact=sorted[idx-1];
+          return <Detail key={sel.id} contact={sel} onSave={saveContact} onDelete={deleteContact}
+            onBack={()=>setScreen(prev==='detail'?'dashboard':prev)}
+            onNext={()=>nextContact&&setSid(nextContact.id)}
+            onPrev={()=>prevContact&&setSid(prevContact.id)}
+            hasNext={!!nextContact}
+            hasPrev={!!prevContact}/>;
+        })()}
+        {screen==='add'&&(
+          <Add onSave={data=>{saveContact(data);setFf(null);setNav('all');setScreen('list');}}
+            onBack={()=>setScreen(prev)}/>
+        )}
+        {showNav&&<BottomNav active={nav} onNav={handleNav}/>}
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
