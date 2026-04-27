@@ -37,6 +37,8 @@ textarea{resize:vertical;min-height:72px;}
 .tile{border-radius:10px;padding:12px 14px;flex:1;text-align:center;}
 .si{background:#FDFAF4;border:1px solid #E2D8CC;border-radius:24px;padding:9px 16px;font-size:13px;font-family:'Inter',sans-serif;color:#241E18;outline:none;width:100%;}
 .si:focus{border-color:#C5B59A;}
+.icon-btn{background:transparent;border:none;cursor:pointer;padding:4px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;opacity:0.45;transition:opacity 0.15s;}
+.icon-btn:hover{opacity:0.85;}
 </style>
 </head>
 <body>
@@ -58,44 +60,67 @@ const STATUS={
   echo:{key:'echo',label:'Echo',desc:'Past client'},
   relay:{key:'relay',label:'Relay',desc:'Referral source'},
 };
+const SOURCES=['SOI','Open House','Referral','Social Media','Networking Event','Door Knocking','Farm','Other'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 const todayStr=()=>new Date().toISOString().split('T')[0];
 const addDays=(str,n)=>{const d=new Date((str||todayStr())+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];};
 const daysUntil=str=>str?Math.round((new Date(str+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000):null;
 const fmtDate=str=>str?new Date(str+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
 const uid=()=>Math.random().toString(36).slice(2,10);
+
 const parseBday=str=>{
   if(!str)return null;
-  const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  if(str.includes('-')&&str.length>=8){
+    const parts=str.split('-');
+    if(parts.length===3){
+      const now=new Date();
+      const d=new Date(now.getFullYear(),parseInt(parts[1])-1,parseInt(parts[2]));
+      if(d<new Date(now.getFullYear(),now.getMonth(),now.getDate()))d.setFullYear(now.getFullYear()+1);
+      return d;
+    }
+  }
   const parts=str.trim().toLowerCase().split(/[\s,]+/);
   if(parts.length<2)return null;
-  const mi=months.indexOf(parts[0]);const day=parseInt(parts[1]);
+  const mi=MONTHS.map(m=>m.toLowerCase()).indexOf(parts[0]);
+  const day=parseInt(parts[1]);
   if(mi===-1||isNaN(day))return null;
   const now=new Date();const d=new Date(now.getFullYear(),mi,day);
   if(d<now)d.setFullYear(now.getFullYear()+1);
   return d;
 };
+const fmtBday=str=>{
+  if(!str)return'';
+  if(str.includes('-')&&str.length>=8){
+    const parts=str.split('-');
+    if(parts.length===3){
+      const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+      return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    }
+  }
+  return str;
+};
 const bdayIn14=str=>{const d=parseBday(str);if(!d)return false;const diff=(d-new Date())/86400000;return diff>=0&&diff<=14;};
 const bdayDays=str=>{const d=parseBday(str);if(!d)return null;return Math.max(0,Math.round((d-new Date())/86400000));};
 
-// Demo contacts — replace these with your own people
+// Demo contacts — five sample contacts showing the system in action
 const DEFAULTS=[
   {
     id:uid(),fn:'Jane',ln:'Smith',ph:'(310) 555-0101',em:'jane.smith@email.com',
     src:'SOI',met:addDays(todayStr(),-45),lc:addDays(todayStr(),-7),meth:'Call',res:'Warming up, asked about market',
     na:'Call',nad:todayStr(),
     bn:'1400000',notes:'Two kids, dog named Biscuit. Wants good schools. Prefers the west side.',
-    freq:'pulse',status:'signal',birthday:'',
-    starter:'She asked about market trends last week — follow up on that',
+    freq:'pulse',status:'signal',birthday:'',starter:'She asked about market trends last week — follow up',
+    anniversaries:[],addr1:'',city:'',state:'',zip:'',
     log:[{text:'Great call. She\'s getting serious. Mentioned spring timeline.',date:addDays(todayStr(),-7)}]
   },
   {
     id:uid(),fn:'Robert',ln:'Jones',ph:'(323) 555-0187',em:'rjones@email.com',
     src:'Open House',met:addDays(todayStr(),-14),lc:addDays(todayStr(),-14),meth:'In person',res:'Very warm, took a card',
-    na:'Send listings',nad:addDays(todayStr(),1),
+    na:'Call',nad:addDays(todayStr(),1),
     bn:'950000',notes:'First-time buyer. Came with his girlfriend. Interested in Silver Lake and Echo Park.',
-    freq:'flow',status:'signal',birthday:'',
-    starter:'Met at the Fountain Ave open house — send Echo Park listings',
+    freq:'flow',status:'signal',birthday:'',starter:'Met at the Fountain Ave open house — send Echo Park listings',
+    anniversaries:[],addr1:'',city:'',state:'',zip:'',
     log:[{text:'Met at open house. Friendly, asked good questions. Girlfriend seems to be the decision maker.',date:addDays(todayStr(),-14)}]
   },
   {
@@ -103,33 +128,56 @@ const DEFAULTS=[
     src:'SOI',met:addDays(todayStr(),-730),lc:addDays(todayStr(),-20),meth:'Text',res:'Happy in the house, referred a neighbor',
     na:'Birthday note',nad:addDays(todayStr(),4),
     bn:'',notes:'Closed 2023. Loves the house. Has referred two people. Birthday coming up — always appreciates a personal note.',
-    freq:'revolve',status:'echo',birthday:new Date(new Date().setDate(new Date().getDate()+4)).toLocaleDateString('en-US',{month:'long',day:'numeric'}),
+    freq:'revolve',status:'echo',
+    birthday:new Date(new Date().setDate(new Date().getDate()+4)).toISOString().split('T')[0],
     starter:'Birthday in 4 days — send a handwritten note',
+    anniversaries:[{date:addDays(todayStr(),-730),note:'Closed on Laurel Canyon house'}],
+    addr1:'',city:'',state:'',zip:'',
     log:[{text:'Closed on Laurel Canyon house. Smooth transaction.',date:addDays(todayStr(),-730)},{text:'Referred her neighbor Dan. Warm intro.',date:addDays(todayStr(),-60)}]
   },
   {
     id:uid(),fn:'Tom',ln:'Brown',ph:'(213) 555-0312',em:'tbrown@email.com',
-    src:'SOI',met:addDays(todayStr(),-180),lc:addDays(todayStr(),-5),meth:'Lunch',res:'Sends 2-3 referrals a year',
-    na:'Thank you note',nad:addDays(todayStr(),6),
+    src:'Referral',met:addDays(todayStr(),-180),lc:addDays(todayStr(),-5),meth:'Lunch',res:'Sends 2-3 referrals a year',
+    na:'Call',nad:addDays(todayStr(),6),
     bn:'',notes:'Contractor. Knows everyone. Sends steady referrals without being asked. Lunch every couple months keeps this warm.',
-    freq:'flow',status:'relay',birthday:'',
-    starter:'Last referral was Lisa Chen — thank him and keep it warm',
+    freq:'flow',status:'relay',birthday:'',starter:'Last referral was Lisa Chen — thank him and keep it warm',
+    anniversaries:[],addr1:'',city:'',state:'',zip:'',
     log:[{text:'Lunch at Gjusta. He mentioned two people who might be selling soon.',date:addDays(todayStr(),-5)}]
   },
   {
     id:uid(),fn:'Lisa',ln:'Davis',ph:'(424) 555-0455',em:'ldavis@email.com',
     src:'Open House',met:addDays(todayStr(),-3),lc:addDays(todayStr(),-3),meth:'In person',res:'Took info sheet, seemed interested',
-    na:'Follow up',nad:'',
+    na:'',nad:'',
     bn:'2000000',notes:'Came alone. Dressed well. Asked detailed questions about the neighborhood. Budget feels higher than she let on.',
-    freq:'phase',status:'static',birthday:'',
-    starter:'Just met — reach out when the moment feels right',
+    freq:'phase',status:'static',birthday:'',starter:'Just met — reach out when the moment feels right',
+    anniversaries:[],addr1:'',city:'',state:'',zip:'',
     log:[{text:'Quiet but engaged at the open house. Worth a follow up.',date:addDays(todayStr(),-3)}]
   },
 ];
 
-const STORAGE_KEY='sc-demo-v1';
+const STORAGE_KEY='sc-demo-v2';
 const load=()=>{try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):null;}catch{return null;}};
 const save=d=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{}};
+
+function AnniversarySection({anniversaries,onChange}){
+  const add=()=>{if((anniversaries||[]).length>=6)return;onChange([...(anniversaries||[]),{date:'',note:''}]);};
+  const upd=(i,k,v)=>{const next=[...(anniversaries||[])];next[i]={...next[i],[k]:v};onChange(next);};
+  const del=i=>onChange((anniversaries||[]).filter((_,idx)=>idx!==i));
+  return(
+    <div style={{marginBottom:18}}>
+      {(anniversaries||[]).map((a,i)=>(
+        <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:8,marginBottom:8,alignItems:'center'}}>
+          <input type="date" value={a.date||''} onChange={e=>upd(i,'date',e.target.value)}/>
+          <input placeholder="e.g. Closed on Maple St." value={a.note||''} onChange={e=>upd(i,'note',e.target.value)}/>
+          <button onClick={()=>del(i)} style={{background:'transparent',border:'none',cursor:'pointer',color:'#9E9288',fontSize:16,opacity:0.45,padding:'0 4px',flexShrink:0}}>×</button>
+        </div>
+      ))}
+      {(anniversaries||[]).length<6&&(
+        <button onClick={add} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:11,cursor:'pointer',padding:0,textDecoration:'underline',opacity:0.6,display:'block'}}>+ Add anniversary</button>
+      )}
+    </div>
+  );
+}
 
 function Pulsar({size=80,color='#C9A870',animate=false}){
   const cx=80,cy=80,outer=52,circles=[22,36,52],lens=[22,16,11];
@@ -252,7 +300,7 @@ function Dashboard({contacts,onOpen,onQL,logged,onLegend,onAdd,onUnsched}){
               <div key={c.id} className="card" onClick={()=>onOpen(c.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',border:'1px solid #E5D2A8'}}>
                 <div>
                   <span style={{fontFamily:'Cormorant Garamond',fontSize:18,fontWeight:400}}>{c.fn} {c.ln}</span>
-                  {c.birthday&&<span style={{fontSize:12,color:'#A87C38',marginLeft:10}}>{c.birthday}</span>}
+                  {c.birthday&&<span style={{fontSize:12,color:'#A87C38',marginLeft:10}}>{fmtBday(c.birthday)}</span>}
                 </div>
                 <span style={{fontSize:11,color:'#A87C38',fontWeight:500}}>{bdayDays(c.birthday)===0?'Today 🎂':`in ${bdayDays(c.birthday)}d`}</span>
               </div>
@@ -307,8 +355,7 @@ function List({contacts,freqFilter,onOpen,onQL,logged,onAdd}){
         <input className="si" placeholder="Search name, notes, phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
         <div style={{display:'flex',gap:5,marginTop:10,overflowX:'auto',paddingBottom:2}}>
           {[null,...Object.values(STATUS)].map(s=>(
-            <button key={s?.key||'all'} className="pill"
-              onClick={()=>setSf(s?s.key:null)}
+            <button key={s?.key||'all'} className="pill" onClick={()=>setSf(s?s.key:null)}
               style={{color:sf===(s?.key||null)?'#243C58':'#5E5248',background:sf===(s?.key||null)?'#C4D9EE':'transparent',borderColor:sf===(s?.key||null)?'#5C8FB5':'#C5B59A',fontSize:10,padding:'3px 10px'}}>
               {s?s.label:'All'}
             </button>
@@ -323,15 +370,68 @@ function List({contacts,freqFilter,onOpen,onQL,logged,onAdd}){
   );
 }
 
-function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
-  const [f,setF]=useState({...contact});
+function NotesLog({log,onUpdate}){
   const [note,setNote]=useState('');
+  const [editing,setEditing]=useState(null);
+  const [editText,setEditText]=useState('');
+  const [delConfirm,setDelConfirm]=useState(null);
+  const addNote=()=>{if(!note.trim())return;onUpdate([{text:note.trim(),date:todayStr()},...(log||[])]);setNote('');};
+  const startEdit=(i,text)=>{setEditing(i);setEditText(text);};
+  const saveEdit=i=>{const next=[...(log||[])];next[i]={...next[i],text:editText.trim()};onUpdate(next);setEditing(null);};
+  const deleteNote=i=>{onUpdate((log||[]).filter((_,idx)=>idx!==i));setDelConfirm(null);};
+  return(
+    <div style={{marginBottom:18}}>
+      <span className="sl">Notes Log</span>
+      <div style={{display:'flex',gap:8,marginBottom:12}}>
+        <textarea placeholder="Result: what happened, what they said, what changed…" value={note} onChange={e=>setNote(e.target.value)} style={{flex:1,minHeight:60}}/>
+        <button onClick={addNote} style={{background:'#16293D',color:'#F6F1E9',border:'none',borderRadius:8,width:40,cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',alignSelf:'flex-end',height:42,flexShrink:0}}>+</button>
+      </div>
+      {(log||[]).length===0&&<div style={{color:'#9E9288',fontSize:12,fontStyle:'italic',textAlign:'center',padding:'10px 0'}}>No entries yet</div>}
+      {(log||[]).map((e,i)=>(
+        <div key={i} style={{background:'#F0EDE7',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <span style={{fontSize:10.5,color:'#9E9288'}}>{fmtDate(e.date)}</span>
+            <div style={{display:'flex',gap:2}}>
+              <button className="icon-btn" onClick={()=>startEdit(i,e.text)}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5E5248" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              {delConfirm===i?(
+                <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                  <button onClick={()=>deleteNote(i)} style={{background:'#B03030',color:'#fff',border:'none',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer'}}>Delete</button>
+                  <button onClick={()=>setDelConfirm(null)} style={{background:'transparent',border:'1px solid #C5B59A',color:'#5E5248',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer'}}>Cancel</button>
+                </div>
+              ):(
+                <button className="icon-btn" onClick={()=>setDelConfirm(i)}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5E5248" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          {editing===i?(
+            <div>
+              <textarea value={editText} onChange={e=>setEditText(e.target.value)} style={{minHeight:60,marginBottom:6}}/>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={()=>saveEdit(i)} style={{background:'#16293D',color:'#F6F1E9',border:'none',borderRadius:6,padding:'5px 14px',fontSize:12,cursor:'pointer'}}>Save</button>
+                <button onClick={()=>setEditing(null)} style={{background:'transparent',border:'1px solid #C5B59A',color:'#5E5248',borderRadius:6,padding:'5px 14px',fontSize:12,cursor:'pointer'}}>Cancel</button>
+              </div>
+            </div>
+          ):(
+            <div style={{fontSize:13,color:'#241E18',lineHeight:1.5}}>{e.text}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
+  const [f,setF]=useState({addr1:'',city:'',state:'',zip:'',anniversaries:[],...contact});
   const [saved,setSaved]=useState(false);
   const [cdel,setCdel]=useState(false);
+  const [addrOpen,setAddrOpen]=useState(!!(contact.addr1||contact.city));
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const hFreq=k=>{const days=FREQ[k]?.days;set('freq',k);if(days)set('nad',addDays(todayStr(),days));};
   const hSave=()=>{onSave(f);setSaved(true);setTimeout(()=>setSaved(false),2000);};
-  const addNote=()=>{if(!note.trim())return;set('log',[{text:note.trim(),date:todayStr()},...(f.log||[])]);setNote('');};
   return(
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{background:'#16293D',padding:'14px 18px',flexShrink:0,display:'flex',alignItems:'center',gap:14}}>
@@ -349,7 +449,7 @@ function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
         </div>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'18px 16px 40px'}}>
-        <Fld label="Contact Info">
+        <Fld label="Contact">
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
             <input placeholder="First name" value={f.fn||''} onChange={e=>set('fn',e.target.value)}/>
             <input placeholder="Last name" value={f.ln||''} onChange={e=>set('ln',e.target.value)}/>
@@ -362,61 +462,71 @@ function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
             <input placeholder="Email" value={f.em||''} onChange={e=>set('em',e.target.value)} style={{flex:1}}/>
             {f.em&&<a href={`mailto:${f.em}`} style={{color:'#5C8FB5',fontSize:18,textDecoration:'none',flexShrink:0}}>✉</a>}
           </div>
+          {addrOpen?(
+            <div style={{marginBottom:10}}>
+              <input placeholder="Street address" value={f.addr1||''} onChange={e=>set('addr1',e.target.value)} style={{marginBottom:8}}/>
+              <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:8}}>
+                <input placeholder="City" value={f.city||''} onChange={e=>set('city',e.target.value)}/>
+                <input placeholder="State" value={f.state||''} onChange={e=>set('state',e.target.value)}/>
+                <input placeholder="ZIP" value={f.zip||''} onChange={e=>set('zip',e.target.value)}/>
+              </div>
+              <button onClick={()=>setAddrOpen(false)} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:11,cursor:'pointer',marginTop:6,padding:0,textDecoration:'underline',opacity:0.6}}>Hide address</button>
+            </div>
+          ):(
+            <button onClick={()=>setAddrOpen(true)} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:11,cursor:'pointer',padding:0,textDecoration:'underline',opacity:0.6,marginBottom:10,display:'block'}}>+ Add address</button>
+          )}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
             <input placeholder="First met" value={f.met||''} onChange={e=>set('met',e.target.value)}/>
             <input placeholder="Budget" value={f.bn||''} onChange={e=>set('bn',e.target.value)}/>
           </div>
           <select value={f.src||'SOI'} onChange={e=>set('src',e.target.value)} style={{marginBottom:10}}>
-            <option value="SOI">SOI</option><option value="Open House">Open House</option>
+            {SOURCES.map(s=><option key={s} value={s}>{s}</option>)}
           </select>
-          <textarea placeholder="Notes…" value={f.notes||''} onChange={e=>set('notes',e.target.value)}/>
+          <textarea placeholder="Background info: who they are, what you know, context that's unlikely to change…" value={f.notes||''} onChange={e=>set('notes',e.target.value)}/>
         </Fld>
-        <Fld label="Frequency">
-          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            {Object.values(FREQ).map(fq=>(
-              <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
-                style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A'}}>{fq.label}</button>
-            ))}
+        <div style={{display:'flex',justifyContent:'center',margin:'18px 0 28px'}}>
+          <div style={{width:'60%',borderTop:'1px solid #E2D8CC'}}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Conversation</span>
+          <input placeholder="Topic starter (appears on the contact card)" value={f.starter||''} onChange={e=>set('starter',e.target.value)}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Birthday</span>
+          <input type="date" value={f.birthday||''} onChange={e=>set('birthday',e.target.value)}/>
+        </div>
+        <AnniversarySection anniversaries={f.anniversaries||[]} onChange={v=>set('anniversaries',v)}/>
+        <div style={{display:'flex',justifyContent:'center',margin:'18px 0 28px'}}>
+          <div style={{width:'60%',borderTop:'1px solid #E2D8CC'}}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Connection</span>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <span style={{fontFamily:'Inter',fontSize:'9px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'#9E9288',minWidth:56,flexShrink:0}}>Frequency</span>
+            <div style={{display:'flex',gap:4}}>
+              {Object.values(FREQ).map(fq=>(
+                <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
+                  style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A',width:50,textAlign:'center',padding:'4px 0',fontSize:'10px'}}>{fq.label}</button>
+              ))}
+            </div>
           </div>
-        </Fld>
-        <Fld label="Status">
-          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            {Object.values(STATUS).map(s=>(
-              <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
-                style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A'}}>{s.label}</button>
-            ))}
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontFamily:'Inter',fontSize:'9px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'#9E9288',minWidth:56,flexShrink:0}}>Status</span>
+            <div style={{display:'flex',gap:4}}>
+              {Object.values(STATUS).map(s=>(
+                <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
+                  style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A',width:50,textAlign:'center',padding:'4px 0',fontSize:'10px'}}>{s.label}</button>
+              ))}
+            </div>
           </div>
-        </Fld>
-        <Fld label="Personal">
-          <input placeholder='Birthday (e.g. "March 15")' value={f.birthday||''} onChange={e=>set('birthday',e.target.value)} style={{marginBottom:10}}/>
-          <input placeholder="Conversation starter…" value={f.starter||''} onChange={e=>set('starter',e.target.value)}/>
-        </Fld>
+        </div>
         <Fld label="Scheduling">
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
             <input type="date" value={f.nad||''} onChange={e=>set('nad',e.target.value)}/>
-            <input placeholder="Next action" value={f.na||''} onChange={e=>set('na',e.target.value)}/>
+            <input placeholder="Method: call, drop by, send a note…" value={f.na||''} onChange={e=>set('na',e.target.value)}/>
           </div>
         </Fld>
-        <Fld label="Last Contact">
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-            <input type="date" value={f.lc||''} onChange={e=>set('lc',e.target.value)}/>
-            <input placeholder="Method" value={f.meth||''} onChange={e=>set('meth',e.target.value)}/>
-            <input placeholder="Result" value={f.res||''} onChange={e=>set('res',e.target.value)}/>
-          </div>
-        </Fld>
-        <Fld label="Notes Log">
-          <div style={{display:'flex',gap:8,marginBottom:12}}>
-            <textarea placeholder="Add a note…" value={note} onChange={e=>setNote(e.target.value)} style={{flex:1,minHeight:60}}/>
-            <button onClick={addNote} style={{background:'#16293D',color:'#F6F1E9',border:'none',borderRadius:8,width:40,cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',alignSelf:'flex-end',height:42,flexShrink:0}}>+</button>
-          </div>
-          {(f.log||[]).length===0&&<div style={{color:'#9E9288',fontSize:12,fontStyle:'italic',textAlign:'center',padding:'10px 0'}}>No entries yet</div>}
-          {(f.log||[]).map((e,i)=>(
-            <div key={i} style={{background:'#F0EDE7',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
-              <div style={{fontSize:10.5,color:'#9E9288',marginBottom:4}}>{fmtDate(e.date)}</div>
-              <div style={{fontSize:13,color:'#241E18',lineHeight:1.5}}>{e.text}</div>
-            </div>
-          ))}
-        </Fld>
+        <NotesLog log={f.log||[]} onUpdate={v=>set('log',v)}/>
         <button className={`sv${saved?' ok':''}`} onClick={hSave}>{saved?'✓ Saved':'Save Changes'}</button>
         <div style={{textAlign:'center',marginTop:22}}>
           {cdel?(
@@ -435,7 +545,8 @@ function Detail({contact,onSave,onDelete,onBack,onNext,onPrev,hasNext,hasPrev}){
 }
 
 function Add({onSave,onBack}){
-  const [f,setF]=useState({id:uid(),fn:'',ln:'',ph:'',em:'',src:'SOI',met:todayStr(),lc:'',meth:'',res:'',na:'',nad:'',bn:'',notes:'',freq:'flow',status:'static',birthday:'',starter:'',log:[]});
+  const [f,setF]=useState({id:uid(),fn:'',ln:'',ph:'',em:'',src:'SOI',met:todayStr(),na:'',nad:'',bn:'',notes:'',freq:'flow',status:'static',birthday:'',starter:'',log:[],addr1:'',city:'',state:'',zip:'',anniversaries:[]});
+  const [addrOpen,setAddrOpen]=useState(false);
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const hFreq=k=>{const days=FREQ[k]?.days;set('freq',k);if(days)set('nad',addDays(todayStr(),days));};
   return(
@@ -445,46 +556,75 @@ function Add({onSave,onBack}){
         <div style={{fontFamily:'Cormorant Garamond',fontSize:22,fontWeight:400,color:'#F6F1E9'}}>New Contact</div>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'18px 16px 40px'}}>
-        <Fld label="Name *">
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <Fld label="Contact">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
             <input placeholder="First name" value={f.fn} onChange={e=>set('fn',e.target.value)}/>
             <input placeholder="Last name" value={f.ln} onChange={e=>set('ln',e.target.value)}/>
           </div>
-        </Fld>
-        <Fld label="Contact">
           <input placeholder="Phone" value={f.ph} onChange={e=>set('ph',e.target.value)} style={{marginBottom:10}}/>
-          <input placeholder="Email" value={f.em} onChange={e=>set('em',e.target.value)}/>
+          <input placeholder="Email" value={f.em} onChange={e=>set('em',e.target.value)} style={{marginBottom:10}}/>
+          {addrOpen?(
+            <div>
+              <input placeholder="Street address" value={f.addr1} onChange={e=>set('addr1',e.target.value)} style={{marginBottom:8}}/>
+              <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:8,marginBottom:8}}>
+                <input placeholder="City" value={f.city} onChange={e=>set('city',e.target.value)}/>
+                <input placeholder="State" value={f.state} onChange={e=>set('state',e.target.value)}/>
+                <input placeholder="ZIP" value={f.zip} onChange={e=>set('zip',e.target.value)}/>
+              </div>
+              <button onClick={()=>setAddrOpen(false)} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:11,cursor:'pointer',padding:0,textDecoration:'underline',opacity:0.6,marginBottom:10,display:'block'}}>Hide address</button>
+            </div>
+          ):(
+            <button onClick={()=>setAddrOpen(true)} style={{background:'transparent',border:'none',color:'#9E9288',fontSize:11,cursor:'pointer',padding:0,textDecoration:'underline',opacity:0.6,marginBottom:10,display:'block'}}>+ Add address</button>
+          )}
+          <select value={f.src} onChange={e=>set('src',e.target.value)} style={{marginBottom:10}}>
+            {SOURCES.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+          <textarea placeholder="Background info: who they are, what you know, context that's unlikely to change…" value={f.notes} onChange={e=>set('notes',e.target.value)}/>
         </Fld>
-        <Fld label="Source">
-          <div style={{display:'flex',gap:8}}>
-            {['SOI','Open House'].map(s=>(
-              <button key={s} className="pill" onClick={()=>set('src',s)}
-                style={{color:f.src===s?'#243C58':'#5E5248',background:f.src===s?'#C4D9EE':'transparent',borderColor:f.src===s?'#5C8FB5':'#C5B59A'}}>{s}</button>
-            ))}
+        <div style={{display:'flex',justifyContent:'center',margin:'18px 0 28px'}}>
+          <div style={{width:'60%',borderTop:'1px solid #E2D8CC'}}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Conversation</span>
+          <input placeholder="Topic starter (appears on the contact card)" value={f.starter} onChange={e=>set('starter',e.target.value)}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Birthday</span>
+          <input type="date" value={f.birthday} onChange={e=>set('birthday',e.target.value)}/>
+        </div>
+        <AnniversarySection anniversaries={f.anniversaries||[]} onChange={v=>set('anniversaries',v)}/>
+        <div style={{display:'flex',justifyContent:'center',margin:'18px 0 28px'}}>
+          <div style={{width:'60%',borderTop:'1px solid #E2D8CC'}}/>
+        </div>
+        <div style={{marginBottom:18}}>
+          <span className="sl">Connection</span>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <span style={{fontFamily:'Inter',fontSize:'9px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'#9E9288',minWidth:56,flexShrink:0}}>Frequency</span>
+            <div style={{display:'flex',gap:4}}>
+              {Object.values(FREQ).map(fq=>(
+                <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
+                  style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A',width:50,textAlign:'center',padding:'4px 0',fontSize:'10px'}}>{fq.label}</button>
+              ))}
+            </div>
           </div>
-        </Fld>
-        <Fld label="Frequency">
-          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            {Object.values(FREQ).map(fq=>(
-              <button key={fq.key} className="pill" onClick={()=>hFreq(fq.key)}
-                style={{color:f.freq===fq.key?fq.color:'#5E5248',background:f.freq===fq.key?fq.bg:'transparent',borderColor:f.freq===fq.key?fq.color:'#C5B59A'}}>{fq.label}</button>
-            ))}
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontFamily:'Inter',fontSize:'9px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'#9E9288',minWidth:56,flexShrink:0}}>Status</span>
+            <div style={{display:'flex',gap:4}}>
+              {Object.values(STATUS).map(s=>(
+                <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
+                  style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A',width:50,textAlign:'center',padding:'4px 0',fontSize:'10px'}}>{s.label}</button>
+              ))}
+            </div>
           </div>
-        </Fld>
-        <Fld label="Status">
-          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            {Object.values(STATUS).map(s=>(
-              <button key={s.key} className="pill" onClick={()=>set('status',s.key)}
-                style={{color:f.status===s.key?'#243C58':'#5E5248',background:f.status===s.key?'#C4D9EE':'transparent',borderColor:f.status===s.key?'#5C8FB5':'#C5B59A'}}>{s.label}</button>
-            ))}
+        </div>
+        <Fld label="Scheduling">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <input type="date" value={f.nad} onChange={e=>set('nad',e.target.value)}/>
+            <input placeholder="Method: call, drop by, send a note…" value={f.na} onChange={e=>set('na',e.target.value)}/>
           </div>
-        </Fld>
-        <Fld label="Personal">
-          <input placeholder='Birthday (e.g. "March 15")' value={f.birthday} onChange={e=>set('birthday',e.target.value)} style={{marginBottom:10}}/>
-          <input placeholder="Conversation starter…" value={f.starter} onChange={e=>set('starter',e.target.value)}/>
         </Fld>
         <Fld label="Notes">
-          <textarea placeholder="Notes…" value={f.notes} onChange={e=>set('notes',e.target.value)}/>
+          <textarea placeholder="Background info: who they are, what you know, context that's unlikely to change…" value={f.notes} onChange={e=>set('notes',e.target.value)}/>
         </Fld>
         <button className="sv" onClick={()=>{if(f.fn.trim())onSave(f);}} style={{opacity:f.fn.trim()?1:0.45}}>Add to Small Circles</button>
       </div>
@@ -620,8 +760,7 @@ function App(){
             onBack={()=>setScreen(prev==='detail'?'dashboard':prev)}
             onNext={()=>nextContact&&setSid(nextContact.id)}
             onPrev={()=>prevContact&&setSid(prevContact.id)}
-            hasNext={!!nextContact}
-            hasPrev={!!prevContact}/>;
+            hasNext={!!nextContact} hasPrev={!!prevContact}/>;
         })()}
         {screen==='add'&&(
           <Add onSave={data=>{saveContact(data);setFf(null);setNav('all');setScreen('list');}}
